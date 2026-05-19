@@ -525,6 +525,14 @@ body::before {
   letter-spacing: 0.05em;
 }
 
+.instr-back-btn {
+  align-self: center;
+  font-size: 0.82rem;
+  padding: 8px 20px;
+  opacity: 0.7;
+}
+.instr-back-btn:hover { opacity: 1; }
+
 /* Responsive grid */
 @media (max-width: 720px) {
   .instr-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1585,6 +1593,16 @@ body::before {
   color: var(--text-secondary);
   line-height: 1.7;
   text-align: left;
+  width: 100%;
+}
+
+/* Results action row */
+.results-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   width: 100%;
 }
 

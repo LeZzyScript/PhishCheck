@@ -285,6 +285,13 @@ async function showResults() {
 }
 
 /* ── EVENTS ───────────────────────────────────────────────────── */
+function showBoot() {
+  document.getElementById('instruction-screen').classList.add('hidden');
+  document.getElementById('results-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('boot-screen').classList.remove('hidden');
+}
+
 function showInstructions() {
   document.getElementById('boot-screen').classList.add('hidden');
   document.getElementById('results-screen').classList.add('hidden');
@@ -340,6 +347,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('guide-panel').classList.toggle('hidden'));
   document.getElementById('guide-close').addEventListener('click', () =>
     document.getElementById('guide-panel').classList.add('hidden'));
+
+  // Back to Main Menu buttons
+  document.getElementById('instr-back-btn').addEventListener('click', showBoot);
+  document.getElementById('results-back-btn').addEventListener('click', showBoot);
 
   // Restart → Instructions (re-brief before next session)
   document.getElementById('restart-btn').addEventListener('click', showInstructions);
