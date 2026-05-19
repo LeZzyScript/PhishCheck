@@ -471,9 +471,58 @@ body::before {
 .score-wrong   { color: var(--red);   border-color: var(--red-dim);   background: var(--red-glow); }
 
 .instr-cta {
-  align-self: center;
-  padding: 14px 48px;
+  padding: 13px 32px;
   font-size: 1rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Name entry */
+.name-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.name-label {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+.name-input-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.name-input {
+  flex: 1;
+  padding: 13px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.name-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.name-input::placeholder { color: var(--text-dim); }
+
+.name-error {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--red);
+  letter-spacing: 0.05em;
 }
 
 /* Responsive grid */
@@ -1537,6 +1586,121 @@ body::before {
   line-height: 1.7;
   text-align: left;
   width: 100%;
+}
+
+/* ── SUBMIT STATUS ──────────────────────────────────────────────── */
+.submit-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.submit-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: blink 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+/* ── LEADERBOARD ────────────────────────────────────────────────── */
+.leaderboard {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.lb-title {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.lb-loading {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.lb-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row-you { background: var(--accent-glow); }
+
+.lb-rank {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  min-width: 28px;
+}
+.lb-row:first-child .lb-rank { color: var(--yellow); }
+
+.lb-name {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+.lb-row-you .lb-name { color: var(--accent); }
+
+.lb-you-tag {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 2px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.lb-score {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  color: var(--green);
+  letter-spacing: 0.04em;
+  min-width: 64px;
+  text-align: right;
+}
+
+.lb-acc {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 44px;
+  text-align: right;
 }
 
 /* ── ANIMATIONS ─────────────────────────────────────────────────── */

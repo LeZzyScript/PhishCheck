@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PhishGuard — Phishing Awareness Simulator</title>
+  <title>PhishCheck — Phishing Awareness Simulator</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,7 +22,7 @@
           <path d="M26 32L30 36L38 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <h1 class="boot-title">PHISH<span>GUARD</span></h1>
+      <h1 class="boot-title">PHISH<span>CHECK</span></h1>
       <p class="boot-subtitle">Cybersecurity Awareness Training Platform</p>
       <p class="boot-version">v2.1.0 — Educational Use Only</p>
     </div>
@@ -182,7 +182,17 @@
         <div class="instr-score-item score-wrong">&#10007; Wrong &nbsp;&minus;5 pts</div>
       </div>
 
-      <button id="instr-start-btn" class="btn-primary instr-cta">&#9001; Begin Training</button>
+      <!-- NAME ENTRY -->
+      <div class="name-entry">
+        <label for="player-name-input" class="name-label">&#9001; Enter your name to begin</label>
+        <div class="name-input-row">
+          <input type="text" id="player-name-input" class="name-input"
+                 placeholder="Enter name here..." maxlength="24"
+                 autocomplete="off" spellcheck="false" />
+          <button id="instr-start-btn" class="btn-primary instr-cta">&#9001; Begin Training</button>
+        </div>
+        <div class="name-error hidden" id="name-error">&#9888; Enter your name to continue.</div>
+      </div>
 
     </div><!-- /instr-container -->
   </div><!-- /instruction-screen -->
@@ -198,7 +208,7 @@
             <path d="M32 4L8 16V32C8 45.3 18.7 57.8 32 61C45.3 57.8 56 45.3 56 32V16L32 4Z" stroke="currentColor" stroke-width="2.5"/>
             <path d="M26 32L30 36L38 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          PHISHGUARD
+          PHISHCHECK
         </div>
       </div>
       <div class="header-center">
@@ -420,10 +430,24 @@
       </div>
 
       <div class="results-eval" id="results-eval"></div>
-      <button class="btn-primary large" id="restart-results-btn">⟩ Restart Training</button>
+
+      <!-- Score save indicator -->
+      <div class="submit-status hidden" id="submit-status">
+        <span class="submit-dot"></span>Saving score to leaderboard...
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="leaderboard">
+        <div class="lb-title">&#9001; TOP 5 LEADERBOARD</div>
+        <div class="lb-loading" id="lb-loading">Loading scores...</div>
+        <div class="lb-list hidden" id="lb-list"></div>
+      </div>
+
+      <button class="btn-primary large" id="restart-results-btn">&#9001; Restart Training</button>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
 </body>
 </html>

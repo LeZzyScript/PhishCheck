@@ -12,6 +12,64 @@ const CONFIG = {
   streakThreshold:  3,
 };
 
+/* ── SUPABASE ─────────────────────────────────────────────────── */
+const SUPABASE_URL     = 'https://syqnkcdjnoblfzeosodm.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5cW5rY2Rqbm9ibGZ6ZW9zb2RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODg0MTAsImV4cCI6MjA5NDc2NDQxMH0.aSI06wkqi2e0_HI00Ps7P6p2Iu58XeDX2MFOsa7afcc';
+const { createClient } = window.supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let playerName = '';
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function submitScore(accuracy) {
+  try {
+    await db.from('scores').insert({
+      name:            playerName,
+      score:           state.score,
+      correct:         state.correct,
+      wrong:           state.wrong,
+      accuracy:        accuracy,
+      phishing_caught: state.phishingCaught,
+      best_streak:     state.bestStreak,
+    });
+  } catch (e) {
+    console.warn('Score submit failed:', e);
+  }
+}
+
+async function fetchLeaderboard() {
+  const lbLoading = document.getElementById('lb-loading');
+  const lbList    = document.getElementById('lb-list');
+  try {
+    const { data, error } = await db
+      .from('scores')
+      .select('name, score, accuracy, phishing_caught')
+      .order('score', { ascending: false })
+      .limit(5);
+    if (error) throw error;
+    lbLoading.classList.add('hidden');
+    lbList.classList.remove('hidden');
+    lbList.innerHTML = data.map((row, i) => {
+      const isYou = row.name.toLowerCase() === playerName.toLowerCase();
+      return '<div class="lb-row' + (isYou ? ' lb-row-you' : '') + '">' +
+        '<span class="lb-rank">#' + (i + 1) + '</span>' +
+        '<span class="lb-name">' + esc(row.name) +
+          (isYou ? '<span class="lb-you-tag">YOU</span>' : '') + '</span>' +
+        '<span class="lb-score">' + row.score + ' pts</span>' +
+        '<span class="lb-acc">' + row.accuracy + '%</span>' +
+        '</div>';
+    }).join('');
+  } catch (e) {
+    lbLoading.textContent = 'Unable to load leaderboard.';
+    console.warn('Leaderboard fetch failed:', e);
+  }
+}
+
 let state = {
   scenarios: [], index: 0, score: 0,
   streak: 0, bestStreak: 0, correct: 0, wrong: 0,
@@ -180,7 +238,7 @@ function nextScenario() {
   showScenario(state.index + 1);
 }
 
-function showResults() {
+async function showResults() {
   document.getElementById('app').classList.add('hidden');
   document.getElementById('results-screen').classList.remove('hidden');
   document.getElementById('progress-bar').style.width = '100%';
@@ -211,6 +269,19 @@ function showResults() {
   riskEl.textContent = riskText;
   riskEl.className   = 'results-risk ' + riskClass;
   document.getElementById('results-eval').textContent = evalText;
+
+  // Save and display leaderboard
+  const submitEl   = document.getElementById('submit-status');
+  const lbLoading  = document.getElementById('lb-loading');
+  const lbList     = document.getElementById('lb-list');
+  submitEl.classList.remove('hidden');
+  lbList.classList.add('hidden');
+  lbLoading.textContent = 'Loading scores...';
+  lbLoading.classList.remove('hidden');
+
+  await submitScore(accuracy);
+  submitEl.classList.add('hidden');
+  await fetchLeaderboard();
 }
 
 /* ── EVENTS ───────────────────────────────────────────────────── */
@@ -219,9 +290,23 @@ function showInstructions() {
   document.getElementById('results-screen').classList.add('hidden');
   document.getElementById('app').classList.add('hidden');
   document.getElementById('instruction-screen').classList.remove('hidden');
+  // Reset leaderboard for next session
+  document.getElementById('submit-status').classList.add('hidden');
+  document.getElementById('lb-list').classList.add('hidden');
+  document.getElementById('lb-loading').textContent = 'Loading scores...';
+  document.getElementById('lb-loading').classList.remove('hidden');
 }
 
 function startGame() {
+  const input = document.getElementById('player-name-input');
+  const name  = input.value.trim();
+  if (!name) {
+    document.getElementById('name-error').classList.remove('hidden');
+    input.focus();
+    return;
+  }
+  document.getElementById('name-error').classList.add('hidden');
+  playerName = name;
   document.getElementById('instruction-screen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   initGame();
@@ -241,6 +326,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Instructions → Game
   document.getElementById('instr-start-btn').addEventListener('click', startGame);
+  document.getElementById('player-name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startGame();
+  });
+  document.getElementById('player-name-input').addEventListener('input', () =>
+    document.getElementById('name-error').classList.add('hidden'));
 
   // In-game controls
   document.getElementById('btn-legit').addEventListener('click', () => handleAnswer(false));
