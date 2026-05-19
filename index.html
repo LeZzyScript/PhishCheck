@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PhishGuard — Phishing Awareness Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ── BOOT SCREEN ──────────────────────────────────────────────── -->
+  <div id="boot-screen" class="boot-screen">
+    <div class="scan-line"></div>
+    <div class="boot-logo">
+      <div class="boot-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M32 4L8 16V32C8 45.3 18.7 57.8 32 61C45.3 57.8 56 45.3 56 32V16L32 4Z" stroke="currentColor" stroke-width="2"/>
+          <path d="M32 14L16 22V32C16 40.8 23.2 49.1 32 51.5C40.8 49.1 48 40.8 48 32V22L32 14Z" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M26 32L30 36L38 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1 class="boot-title">PHISH<span>GUARD</span></h1>
+      <p class="boot-subtitle">Cybersecurity Awareness Training Platform</p>
+      <p class="boot-version">v2.1.0 — Educational Use Only</p>
+    </div>
+    <div class="boot-terminal">
+      <div class="terminal-line" id="boot-line-1"></div>
+      <div class="terminal-line" id="boot-line-2"></div>
+      <div class="terminal-line" id="boot-line-3"></div>
+      <div class="terminal-line" id="boot-line-4"></div>
+    </div>
+    <div class="boot-actions">
+      <button class="btn-primary" id="start-btn">⟩ Initialize Training</button>
+      <button class="btn-ghost" id="guide-boot-btn">View Detection Guide</button>
+    </div>
+    <div class="boot-disclaimer">
+      <span class="tag-edu">EDUCATIONAL</span>
+      All scenarios are simulated. No real credentials are collected or transmitted.
+    </div>
+  </div>
+
+  <!-- ── INSTRUCTION SCREEN ──────────────────────────────────────── -->
+  <div id="instruction-screen" class="instr-screen hidden">
+    <div class="scan-line"></div>
+    <div class="instr-container">
+
+      <div class="instr-header">
+        <div class="instr-tag">TRAINING BRIEFING</div>
+        <h1 class="instr-title">How to Spot a Phishing Attack</h1>
+        <p class="instr-subtitle">Study the 6 visual indicators below, then classify 20 real-looking scenarios.</p>
+      </div>
+
+      <!-- HOW TO PLAY -->
+      <div class="instr-how">
+        <div class="instr-choice legit-choice">
+          <div class="instr-choice-icon">✔</div>
+          <div>
+            <div class="instr-choice-label">LEGITIMATE</div>
+            <div class="instr-choice-sub">This email or page appears safe and authentic</div>
+          </div>
+        </div>
+        <div class="instr-vs">VS</div>
+        <div class="instr-choice phish-choice">
+          <div class="instr-choice-icon">⚠</div>
+          <div>
+            <div class="instr-choice-label">PHISHING</div>
+            <div class="instr-choice-sub">This email or page is suspicious or fake</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISUAL INDICATOR CARDS -->
+      <div class="instr-section-title">&#9650; What to Look For — Visual Examples</div>
+      <div class="instr-grid">
+
+        <!-- 1. Domain Spoofing -->
+        <div class="instr-card">
+          <div class="instr-card-head">&#128279; Suspicious Domain / URL</div>
+          <div class="instr-visual">
+            <div class="iv-label bad-label">&#9888; PHISHING</div>
+            <div class="iv-urlbar bad-url">
+              <span class="iv-lock">&#128275;</span>
+              <span class="iv-url">https://<span class="iv-bad">paypa<strong>1</strong></span>.com/verify</span>
+            </div>
+            <div class="iv-label good-label">&#10003; LEGITIMATE</div>
+            <div class="iv-urlbar good-url">
+              <span class="iv-lock">&#128274;</span>
+              <span class="iv-url">https://<span class="iv-good">paypal</span>.com/signin</span>
+            </div>
+          </div>
+          <div class="instr-card-note">The letter <strong>L</strong> is swapped for the number <strong>1</strong>. Always read the domain character by character before entering credentials.</div>
+        </div>
+
+        <!-- 2. Sender Spoofing -->
+        <div class="instr-card">
+          <div class="instr-card-head">&#128231; Spoofed Sender Address</div>
+          <div class="instr-visual">
+            <div class="iv-label bad-label">&#9888; PHISHING</div>
+            <div class="iv-email-from bad-from">
+              <span class="iv-from-label">From:</span>
+              <span>Netflix Billing <span class="iv-bad">&lt;billing@netflix-update.net&gt;</span></span>
+            </div>
+            <div class="iv-label good-label">&#10003; LEGITIMATE</div>
+            <div class="iv-email-from good-from">
+              <span class="iv-from-label">From:</span>
+              <span>Netflix <span class="iv-good">&lt;info@mailer.netflix.com&gt;</span></span>
+            </div>
+          </div>
+          <div class="instr-card-note">Display names can say anything. Always check the <strong>actual domain</strong> inside the angle brackets — not just the friendly name.</div>
+        </div>
+
+        <!-- 3. Urgency Language -->
+        <div class="instr-card">
+          <div class="instr-card-head">&#9889; Urgency &amp; Threatening Language</div>
+          <div class="instr-visual">
+            <div class="iv-label bad-label">&#9888; PHISHING — Pressure tactics</div>
+            <div class="iv-text-sample bad-text">
+              Your account will be <span class="iv-highlight">permanently suspended in 24&nbsp;hours</span> unless you <span class="iv-highlight">act immediately</span>. <span class="iv-highlight">Do not ignore this message.</span>
+            </div>
+            <div class="iv-label good-label">&#10003; LEGITIMATE — Neutral tone</div>
+            <div class="iv-text-sample good-text">
+              A new sign-in was detected on your account. If this was you, no action is needed.
+            </div>
+          </div>
+          <div class="instr-card-note">Real services give you time to respond. Panic-inducing deadlines and threats are manipulation tactics designed to bypass critical thinking.</div>
+        </div>
+
+        <!-- 4. Excessive Data Requests -->
+        <div class="instr-card">
+          <div class="instr-card-head">&#128273; Excessive Data Collection</div>
+          <div class="instr-visual">
+            <div class="iv-form-row">
+              <div class="iv-field ok-field">&#10003; Email</div>
+              <div class="iv-field ok-field">&#10003; Password</div>
+              <div class="iv-field bad-field">&#9888; SSN Last 4 Digits</div>
+              <div class="iv-field bad-field">&#9888; Full Card Number</div>
+              <div class="iv-field bad-field">&#9888; Card PIN</div>
+            </div>
+          </div>
+          <div class="instr-card-note">Login pages only need credentials. Any form requesting <strong>SSN, full card number, CVV, or PIN</strong> alongside your password is harvesting financial data.</div>
+        </div>
+
+        <!-- 5. Generic Greeting -->
+        <div class="instr-card">
+          <div class="instr-card-head">&#128100; Generic vs Personalised Greeting</div>
+          <div class="instr-visual">
+            <div class="iv-label bad-label">&#9888; PHISHING — No personalisation</div>
+            <div class="iv-greeting bad-greeting">"Dear Customer,"</div>
+            <div class="iv-greeting bad-greeting">"Dear Valued Member,"</div>
+            <div class="iv-label good-label">&#10003; LEGITIMATE — Knows your name</div>
+            <div class="iv-greeting good-greeting">"Hi John Doe,"</div>
+            <div class="iv-greeting good-greeting">"Hello john.doe@gmail.com,"</div>
+          </div>
+          <div class="instr-card-note">Services you use already know your name or account details. A generic greeting suggests a mass-sent phishing campaign.</div>
+        </div>
+
+        <!-- 6. Too-Good Offers -->
+        <div class="instr-card">
+          <div class="instr-card-head">&#127873; Too-Good-To-Be-True Offers</div>
+          <div class="instr-visual">
+            <div class="iv-offer-box">
+              <div class="iv-offer-title">&#127881; You Have WON $2,000,000!!!</div>
+              <div class="iv-offer-body">Pay a <span class="iv-bad">$250 processing fee</span> to release your prize to your bank account.</div>
+            </div>
+            <div class="iv-offer-box crypto-box">
+              <div class="iv-offer-title">&#8383; Send 1 BTC → Get 2 BTC Back</div>
+              <div class="iv-offer-body">Send to wallet: <span class="iv-bad">bc1qxy2kgdygjr...</span></div>
+            </div>
+          </div>
+          <div class="instr-card-note">You cannot win a lottery you never entered. No legitimate investment doubles your money instantly. Any "fee to receive funds" is an advance-fee scam.</div>
+        </div>
+
+      </div><!-- /instr-grid -->
+
+      <!-- SCORING BAR -->
+      <div class="instr-scoring">
+        <div class="instr-score-item score-correct">&#10003; Correct &nbsp;+10 pts</div>
+        <div class="instr-score-item score-streak">&#9889; 3-streak &nbsp;+5 bonus</div>
+        <div class="instr-score-item score-wrong">&#10007; Wrong &nbsp;&minus;5 pts</div>
+      </div>
+
+      <button id="instr-start-btn" class="btn-primary instr-cta">&#9001; Begin Training</button>
+
+    </div><!-- /instr-container -->
+  </div><!-- /instruction-screen -->
+
+  <!-- ── MAIN APP ──────────────────────────────────────────────────── -->
+  <div id="app" class="app hidden">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-small">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
+            <path d="M32 4L8 16V32C8 45.3 18.7 57.8 32 61C45.3 57.8 56 45.3 56 32V16L32 4Z" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M26 32L30 36L38 28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          PHISHGUARD
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="difficulty-badge" id="difficulty-badge">EASY</div>
+        <div class="scenario-counter">
+          SCENARIO <span id="scenario-num">1</span> / <span id="scenario-total">50</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn-icon" id="guide-toggle" title="Detection Guide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </button>
+        <button class="btn-icon" id="restart-btn" title="Restart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <!-- Score Panel -->
+    <div class="score-panel">
+      <div class="score-item">
+        <span class="score-label">SCORE</span>
+        <span class="score-value" id="score-display">0</span>
+      </div>
+      <div class="score-divider"></div>
+      <div class="score-item">
+        <span class="score-label">STREAK</span>
+        <span class="score-value streak" id="streak-display">0</span>
+      </div>
+      <div class="score-divider"></div>
+      <div class="score-item">
+        <span class="score-label">CORRECT</span>
+        <span class="score-value correct" id="correct-display">0</span>
+      </div>
+      <div class="score-divider"></div>
+      <div class="score-item">
+        <span class="score-label">WRONG</span>
+        <span class="score-value wrong" id="wrong-display">0</span>
+      </div>
+      <div class="score-divider"></div>
+      <div class="score-item">
+        <span class="score-label">ACCURACY</span>
+        <span class="score-value" id="accuracy-display">—</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- Scenario Viewport -->
+      <section class="scenario-section">
+
+        <!-- Scenario Meta -->
+        <div class="scenario-header">
+          <div class="scenario-meta-row">
+            <div class="scenario-type-tag" id="scenario-type-tag">LOGIN PAGE</div>
+            <div class="scenario-diff-tag" id="scenario-diff-tag">EASY</div>
+          </div>
+          <div class="scenario-title" id="scenario-title">Loading scenario...</div>
+          <!-- Fake browser URL bar -->
+          <div class="browser-bar">
+            <div class="browser-traffic-lights">
+              <span class="tl red"></span><span class="tl yellow"></span><span class="tl green"></span>
+            </div>
+            <div class="browser-url">
+              <span class="url-lock" id="url-lock">🔒</span>
+              <span class="url-protocol" id="url-protocol">https://</span><span class="url-domain" id="url-domain">loading...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scenario Frame -->
+        <div class="scenario-frame">
+          <div class="scenario-content" id="scenario-content">
+            <!-- Injected HTML goes here -->
+          </div>
+        </div>
+
+        <!-- Decision Buttons -->
+        <div class="decision-panel" id="decision-panel">
+          <div class="decision-prompt">⟩ Analyze and classify this page:</div>
+          <div class="decision-buttons">
+            <button class="btn-decision legit" id="btn-legit">
+              <div class="decision-icon">✔</div>
+              <div class="decision-label">LEGITIMATE</div>
+              <div class="decision-sub">This page appears safe</div>
+            </button>
+            <button class="btn-decision phish" id="btn-phish">
+              <div class="decision-icon">⚠</div>
+              <div class="decision-label">PHISHING</div>
+              <div class="decision-sub">This page is suspicious</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Feedback Panel -->
+        <div class="feedback-panel hidden" id="feedback-panel">
+          <div class="feedback-header" id="feedback-header">
+            <div class="feedback-icon" id="feedback-icon"></div>
+            <div class="feedback-title" id="feedback-title"></div>
+          </div>
+          <div class="feedback-body">
+            <div class="feedback-message" id="feedback-message"></div>
+            <div class="indicators-section hidden" id="indicators-section">
+              <div class="indicators-title" id="indicators-title">⚠ Phishing Indicators Detected:</div>
+              <ul class="indicators-list" id="indicators-list"></ul>
+            </div>
+          </div>
+          <div class="feedback-actions">
+            <button class="btn-primary" id="next-btn">Next Scenario →</button>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- ── EDUCATIONAL GUIDE PANEL ──────────────────────────────────── -->
+    <aside class="guide-panel hidden" id="guide-panel">
+      <div class="guide-header">
+        <h2 class="guide-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          Phishing Detection Guide
+        </h2>
+        <button class="btn-icon" id="guide-close">✕</button>
+      </div>
+      <div class="guide-content">
+        <div class="guide-category">
+          <div class="guide-cat-title">🔗 Suspicious URLs</div>
+          <p>Look for misspelled domains (paypa1.com), extra subdomains (secure.bank.malicious.com), unusual TLDs (.xyz, .tk), or IP addresses instead of domain names.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">⚠️ Urgency &amp; Threats</div>
+          <p>Phrases like "Act immediately", "Your account will be suspended", or "Verify now or lose access" are pressure tactics designed to bypass critical thinking.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">🎭 Fake Branding</div>
+          <p>Watch for logo distortions, wrong color schemes, different fonts, or subtle name changes (Amaz0n, Netf1ix, PayPa1). Legitimate brands are consistent.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">📧 Sender Mismatch</div>
+          <p>The display name may say "PayPal Support" but the actual email address could be support@paypal-secure.xyz. Always check the actual sender address.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">🔐 Unnecessary Data Requests</div>
+          <p>Legitimate services rarely ask for your full SSN, CVV, password, or PIN via email or pop-up. Banks will never ask for your full card number by email.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">✍️ Grammar &amp; Spelling</div>
+          <p>Professional companies proofread their communications. Unusual grammar, odd spacing, or awkward phrasing can indicate non-native attackers or automated generation.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">🎁 Unrealistic Rewards</div>
+          <p>"You've been selected!" or "Claim your $1000 gift card now!" are classic lures. If it sounds too good to be true, it almost certainly is.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">📱 QR Code Phishing</div>
+          <p>QR codes can redirect to malicious URLs. Always preview the URL before visiting. Be suspicious of QR codes in unexpected places or unsolicited emails.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">🔒 Misuse of HTTPS</div>
+          <p>HTTPS means the connection is encrypted — NOT that the site is legitimate. Phishing sites commonly use HTTPS. Always verify the domain name itself.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">😨 Emotional Manipulation</div>
+          <p>Fear, excitement, and curiosity are exploited. "Your account has been hacked", "You've won a prize", or "Someone is accessing your files" are manipulation tactics.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">📎 Suspicious Attachments</div>
+          <p>Unexpected invoices, shipping labels, or "important documents" are common. Malware hides in .docx, .pdf, .zip, and .exe files sent from unknown senders.</p>
+        </div>
+        <div class="guide-category">
+          <div class="guide-cat-title">📝 Fake Login Forms</div>
+          <p>Clone sites mimic real login pages pixel-for-pixel. Always verify the URL is the real domain before entering credentials. Use a password manager that won't autofill on fakes.</p>
+        </div>
+      </div>
+    </aside>
+
+  </div><!-- /app -->
+
+  <!-- ── RESULTS SCREEN ────────────────────────────────────────────── -->
+  <div id="results-screen" class="results-screen hidden">
+    <div class="scan-line"></div>
+    <div class="results-container">
+      <div class="results-icon" id="results-icon"></div>
+      <h2 class="results-title">Training Complete</h2>
+      <div class="results-risk" id="results-risk"></div>
+
+      <div class="results-grid">
+        <div class="results-stat">
+          <div class="results-stat-value" id="r-score">0</div>
+          <div class="results-stat-label">Final Score</div>
+        </div>
+        <div class="results-stat">
+          <div class="results-stat-value" id="r-accuracy">0%</div>
+          <div class="results-stat-label">Accuracy</div>
+        </div>
+        <div class="results-stat">
+          <div class="results-stat-value" id="r-correct">0</div>
+          <div class="results-stat-label">Correct</div>
+        </div>
+        <div class="results-stat">
+          <div class="results-stat-value" id="r-wrong">0</div>
+          <div class="results-stat-label">Wrong</div>
+        </div>
+        <div class="results-stat">
+          <div class="results-stat-value" id="r-streak">0</div>
+          <div class="results-stat-label">Best Streak</div>
+        </div>
+        <div class="results-stat">
+          <div class="results-stat-value" id="r-phish-caught">0</div>
+          <div class="results-stat-label">Phishing Caught</div>
+        </div>
+      </div>
+
+      <div class="results-eval" id="results-eval"></div>
+      <button class="btn-primary large" id="restart-results-btn">⟩ Restart Training</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
