@@ -79,10 +79,10 @@ let state = {
 
 /* ── BOOT ─────────────────────────────────────────────────────── */
 const BOOT_LINES = [
-  'Loading PhishGuard engine v2.1.0...',
   'Initializing scenario database... [50 scenarios loaded]',
-  'Calibrating threat detection algorithms...',
-  'System ready. Awaiting operator authorization.',
+  'These are only simulations.',
+  'No real credentials are collected or transmitted.',
+  'Good luck User! :)',
 ];
 
 function runBoot() {
@@ -114,7 +114,7 @@ function initGame() {
   const phishing = all.filter(s =>  s.isPhishing).slice(0, CONFIG.phishingCount);
   const legit    = all.filter(s => !s.isPhishing).slice(0, CONFIG.legitCount);
   state.scenarios = [...phishing, ...legit].sort(() => Math.random() - 0.5);
-  document.getElementById('scenario-total').textContent = CONFIG.gameLength;
+  document.getElementById('scenario-total').textContent = state.scenarios.length;
   updateHUD();
   showScenario(0);
 }
@@ -213,7 +213,10 @@ function showFeedback(correct, userSaidPhishing, s) {
     header.classList.add('warning');
     icon.textContent  = '⚠';
     title.textContent = 'False Alarm — This Was Legitimate';
-    msg.textContent   = s.hints[Math.floor(Math.random() * s.hints.length)];
+      const hintMsg = s.hints.length 
+    ? s.hints[Math.floor(Math.random() * s.hints.length)]
+    : 'No specific phishing indicators were detected. Check the URL — it matches the legitimate domain.';
+  msg.textContent = hintMsg;
   }
 }
 
@@ -324,12 +327,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Boot → Instructions
   document.getElementById('start-btn').addEventListener('click', showInstructions);
-
-  // Boot → Instructions (then guide opens automatically)
-  document.getElementById('guide-boot-btn').addEventListener('click', () => {
-    showInstructions();
-    document.getElementById('guide-panel').classList.remove('hidden');
-  });
 
   // Instructions → Game
   document.getElementById('instr-start-btn').addEventListener('click', startGame);
