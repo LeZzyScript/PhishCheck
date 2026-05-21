@@ -3,9 +3,9 @@
    ================================================================ */
 
 const CONFIG = {
-  gameLength:      20,
-  phishingCount:   12,
-  legitCount:       8,
+  gameLength:      15,
+  phishingCount:   9,
+  legitCount:       6,
   pointsCorrect:   10,
   pointsWrong:     -5,
   streakBonus:      5,
@@ -80,8 +80,8 @@ let state = {
 /* ── BOOT ─────────────────────────────────────────────────────── */
 const BOOT_LINES = [
   'Initializing scenario database... [50 scenarios loaded]',
-  'These are only simulations.',
-  'No real credentials are collected or transmitted.',
+  'Loading up leaderboard and analytics modules... [OK]',
+  'Think you can spot which is fake or not?',
   'Good luck User! :)',
 ];
 
@@ -91,7 +91,7 @@ function runBoot() {
     let i = 0;
     const t = setInterval(() => {
       el.textContent += text[i++];
-      if (i >= text.length) { clearInterval(t); if (cb) setTimeout(cb, 300); }
+      if (i >= text.length) { clearInterval(t); if (cb) setTimeout(cb, 400); }
     }, 28);
   }
   function next() {
@@ -115,60 +115,72 @@ function initGame() {
   const legit    = all.filter(s => !s.isPhishing).slice(0, CONFIG.legitCount);
   state.scenarios = [...phishing, ...legit].sort(() => Math.random() - 0.5);
   document.getElementById('scenario-total').textContent = state.scenarios.length;
-  updateHUD();
   showScenario(0);
+  updateNextButton();
 }
 
 /* ── SHOW SCENARIO ────────────────────────────────────────────── */
 function showScenario(i) {
-  state.index    = i;
+  state.index = i;
   state.answered = false;
   const s = state.scenarios[i];
 
-  document.getElementById('scenario-num').textContent      = i + 1;
-  document.getElementById('progress-bar').style.width      = (i / CONFIG.gameLength * 100) + '%';
+  document.getElementById('scenario-num').textContent = i + 1;
+  document.getElementById('progress-bar').style.width = (i / CONFIG.gameLength * 100) + '%';
   document.getElementById('scenario-type-tag').textContent = s.type;
-  document.getElementById('scenario-title').textContent    = s.title;
+  document.getElementById('scenario-title').textContent = s.title;
 
   const diff = s.difficulty;
   document.getElementById('scenario-diff-tag').textContent = diff.toUpperCase();
   const db = document.getElementById('difficulty-badge');
   db.textContent = diff.toUpperCase();
-  db.className   = 'difficulty-badge ' + diff;
+  db.className = 'difficulty-badge ' + diff;
 
-  document.getElementById('url-lock').textContent     = s.hasLock ? '🔒' : '🔓';
+  document.getElementById('url-lock').textContent = s.hasLock ? '🔒' : '🔓';
   document.getElementById('url-protocol').textContent = s.hasLock ? 'https://' : 'http://';
   const domEl = document.getElementById('url-domain');
   domEl.textContent = s.domain;
-  domEl.className   = 'url-domain' + (s.domainClass ? ' ' + s.domainClass : '');
+  domEl.className = 'url-domain' + (s.domainClass ? ' ' + s.domainClass : '');
 
   document.getElementById('scenario-content').innerHTML = s.html;
   document.getElementById('decision-panel').classList.remove('hidden');
   document.getElementById('feedback-panel').classList.add('hidden');
+  
+  // Update button text based on current position
+  updateNextButton();
 }
 
 /* ── ANSWER ───────────────────────────────────────────────────── */
 function handleAnswer(userSaidPhishing) {
   if (state.answered) return;
   state.answered = true;
-  const s       = state.scenarios[state.index];
+  const s = state.scenarios[state.index];
   const correct = userSaidPhishing === s.isPhishing;
 
   if (correct) {
     state.correct++;
     state.streak++;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
-    let pts = CONFIG.pointsCorrect;
-    if (state.streak % CONFIG.streakThreshold === 0) pts += CONFIG.streakBonus;
+    
+    let pts = CONFIG.pointsCorrect; // 10 points
+    
+    // NEW STREAK BONUS LOGIC
+    if (state.streak === 3) {
+      pts += 5;  // +5 bonus at streak 3
+    } else if (state.streak >= 5) {
+      pts += 10; // +10 bonus for streak 5 and above
+    }
+    
     state.score += pts;
     if (s.isPhishing) state.phishingCaught++;
   } else {
     state.wrong++;
-    state.streak = 0;
-    state.score  = Math.max(0, state.score + CONFIG.pointsWrong);
-    if ( s.isPhishing && !userSaidPhishing) state.missedPhishing++;
-    if (!s.isPhishing &&  userSaidPhishing) state.falsePositives++;
+    state.streak = 0;  // Reset streak on wrong answer
+    state.score = Math.max(0, state.score + CONFIG.pointsWrong); // -5 points, min 0
+    if (s.isPhishing && !userSaidPhishing) state.missedPhishing++;
+    if (!s.isPhishing && userSaidPhishing) state.falsePositives++;
   }
+  
   updateHUD();
   showFeedback(correct, userSaidPhishing, s);
 }
@@ -188,12 +200,18 @@ function showFeedback(correct, userSaidPhishing, s) {
   const msg   = document.getElementById('feedback-message');
 
   if (correct) {
-    header.classList.add(s.isPhishing ? 'success' : 'info');
-    icon.textContent  = '✔';
-    title.textContent = s.isPhishing
-      ? 'Threat Neutralized — Phishing Detected'
-      : 'Verified — Legitimate Source Confirmed';
-    msg.textContent = s.explanation;
+  header.classList.add(s.isPhishing ? 'success' : 'info');
+  icon.textContent = '✔';
+  title.textContent = s.isPhishing
+    ? 'Threat Neutralized — Phishing Detected'
+    : 'Verified — Legitimate Source Confirmed';
+  let bonusText = '';
+  if (state.streak === 3) {
+    bonusText = ' (+5 streak bonus!)';
+  } else if (state.streak >= 5) {
+    bonusText = ' (+10 streak bonus!)';
+  }
+  msg.textContent = s.explanation + bonusText;
     if (s.isPhishing && s.indicators.length) {
       indSec.classList.remove('hidden');
       document.getElementById('indicators-title').textContent = '⚑ Indicators (educational review):';
@@ -227,12 +245,26 @@ function updateHUD() {
   el.classList.remove('score-pop');
   void el.offsetWidth;
   el.classList.add('score-pop');
-  document.getElementById('streak-display').textContent  = state.streak;
+  document.getElementById('streak-display').textContent = state.streak;
   document.getElementById('correct-display').textContent = state.correct;
-  document.getElementById('wrong-display').textContent   = state.wrong;
+  document.getElementById('wrong-display').textContent = state.wrong;
+  
   const total = state.correct + state.wrong;
   document.getElementById('accuracy-display').textContent =
     total > 0 ? Math.round(state.correct / total * 100) + '%' : '—';
+  
+  // Optional: Add streak bonus indicator
+  const streakEl = document.getElementById('streak-display');
+  if (state.streak >= 5) {
+    streakEl.style.color = 'var(--accent)';
+    streakEl.title = '+10 bonus per correct answer!';
+  } else if (state.streak >= 3) {
+    streakEl.style.color = 'var(--yellow)';
+    streakEl.title = '+5 bonus on next correct!';
+  } else {
+    streakEl.style.color = 'var(--text-primary)';
+    streakEl.title = '';
+  }
 }
 
 /* ── NEXT / RESULTS ───────────────────────────────────────────── */
@@ -285,6 +317,17 @@ async function showResults() {
   await submitScore(accuracy);
   submitEl.classList.add('hidden');
   await fetchLeaderboard();
+}
+
+function updateNextButton() {
+  const nextBtn = document.getElementById('next-btn');
+  const isLastScenario = state.index + 1 >= CONFIG.gameLength;
+  
+  if (isLastScenario) {
+    nextBtn.textContent = 'Submit → View Results';
+  } else {
+    nextBtn.textContent = 'Next Scenario →';
+  }
 }
 
 /* ── EVENTS ───────────────────────────────────────────────────── */
@@ -360,28 +403,30 @@ document.addEventListener('DOMContentLoaded', () => {
 const SCENARIOS = [
 
 {
-  id: 1, title: 'PayPal — Account Verification',
-  type: 'LOGIN PAGE', difficulty: 'easy', isPhishing: true,
-  url: 'paypa1.com/account/verify', domain: 'paypa1.com', domainClass: 'suspicious', hasLock: true,
+  id: 1, title: 'PayPal — Account Restricted',
+  type: 'EMAIL', difficulty: 'hard', isPhishing: true,
+  url: 'paypal.com.verify-account.net/login', domain: 'paypal.com.verify-account.net', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'Domain "paypa1.com" replaces the letter L with the number 1 — typosquatting.',
-    'Login form requests SSN last 4 digits — PayPal never asks for this during login.',
-    'Form requests your full 16-digit card number alongside login credentials.',
-    'Urgency banner threatens permanent suspension within 24 hours.',
+    'Domain contains "paypal.com" but the actual domain is "verify-account.net" — subdomain spoofing.',
+    'Real PayPal domains end with paypal.com — anything after paypal.com/ is a path, but paypal.com.XXX is a different domain.',
+    'Requests SSN and full card number during "verification" — PayPal never asks for this.',
   ],
-  explanation: 'Correct. The domain "paypa1.com" is a typosquat of paypal.com. PayPal login only requires email and password — never SSN or card numbers.',
+  explanation: 'Correct. The domain "paypal.com.verify-account.net" looks like it belongs to PayPal, but the real domain is verify-account.net. Always look for the last slash before .com',
   hints: [],
-  html: `<div class="sim-page">
-  <div class="sim-login-box">
-    <div class="sim-login-logo" style="color:#003087">Pay<span style="color:#009cde">Pa<span style="color:#ff3c5a">1</span></span></div>
-    <div class="sim-warning-banner">&#9888; Your account has been LIMITED — verify within 24 hours or face permanent suspension.</div>
-    <div class="sim-field"><label>Email or Phone</label><input placeholder="Email or phone number"></div>
-    <div class="sim-field"><label>Password</label><input type="password" placeholder="Password"></div>
-    <div class="sim-field"><label>SSN — Last 4 Digits (required for verification)</label><input placeholder="e.g. 4821"></div>
-    <div class="sim-field"><label>Full Card Number</label><input placeholder="#### #### #### ####"></div>
-    <button class="sim-btn navy-btn">Verify &amp; Restore Account</button>
-    <div class="sim-small">&#169; 2026 PayPa1 Inc. All rights reserved.</div>
+  html: `<div class="sim-email">
+  <div class="sim-email-header">
+    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">PayPal Security &lt;security@paypal.com.verify-account.net&gt;</span></div>
+    <div class="sim-email-field"><span class="sim-email-field-label">To:</span><span class="sim-email-field-value">user@email.com</span></div>
+    <div class="sim-email-subject">&#9888; Your account has been restricted — Action required</div>
   </div>
+  <div class="sim-email-body">
+    <p>Dear valued customer,</p>
+    <p>We noticed unusual activity on your PayPal account. To avoid permanent limitation, please verify your identity within 24 hours.</p>
+    <p><strong>Required verification:</strong> SSN (last 4 digits) and card number on file.</p>
+    <a class="sim-email-cta" href="#">Verify Account Now</a>
+    <p style="margin-top:12px;font-size:0.78rem">Link: https://paypal.com.verify-account.net/login</p>
+  </div>
+  <div class="sim-email-footer">PayPal | security@paypal.com.verify-account.net</div>
 </div>`
 },
 
@@ -440,10 +485,10 @@ const SCENARIOS = [
 
 {
   id: 4, title: 'Google — Account Suspended Alert',
-  type: 'EMAIL', difficulty: 'medium', isPhishing: true,
+  type: 'EMAIL', difficulty: 'hard', isPhishing: true,
   url: 'accounts.google.com.security-alert.co/signin', domain: 'accounts.google.com.security-alert.co', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'Sender is "security@accounts-google.co" — Google uses @google.com or @accounts.google.com.',
+    'Sender is "security@accounts-google.com" — Google uses @google.com or @accounts.google.com.',
     'URL "accounts.google.com.security-alert.co" is controlled by security-alert.co, not Google.',
     'Threatens account deletion within 12 hours to force a panicked click.',
     'Generic "Google User" greeting — Google always personalises security emails.',
@@ -452,7 +497,7 @@ const SCENARIOS = [
   hints: [],
   html: `<div class="sim-email">
   <div class="sim-email-header">
-    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">Google Security &lt;security@accounts-google.co&gt;</span></div>
+    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">Google Security &lt;security@accounts-google.com&gt;</span></div>
     <div class="sim-email-field"><span class="sim-email-field-label">To:</span><span class="sim-email-field-value">user@gmail.com</span></div>
     <div class="sim-email-subject">&#128308; URGENT: Your Google Account has been suspended</div>
   </div>
@@ -462,31 +507,32 @@ const SCENARIOS = [
     <a class="sim-email-cta red-btn" href="#">Verify Identity Now</a>
     <p style="margin-top:12px;font-size:0.78rem">Link: http://accounts.google.com.security-alert.co/signin</p>
   </div>
-  <div class="sim-email-footer">Google LLC | security@accounts-google.co</div>
+  <div class="sim-email-footer">Google LLC | security@accounts-google.com</div>
 </div>`
 },
 
 {
-  id: 5, title: 'Apple ID — Identity Verification',
-  type: 'LOGIN PAGE', difficulty: 'medium', isPhishing: true,
-  url: 'apple-id-support.com/verify', domain: 'apple-id-support.com', domainClass: 'suspicious', hasLock: true,
+  id: 5, title: 'Apple ID — Sign-In Request',
+  type: 'LOGIN PAGE', difficulty: 'hard', isPhishing: true,
+  url: 'appleid.icloud.com.signin-verify.net', domain: 'appleid.icloud.com.signin-verify.net', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'Domain is "apple-id-support.com" — Apple\'s real domain is apple.com.',
-    'Form requests date of birth — not required for Apple ID login.',
-    'Form requests card expiry and CVV — Apple never asks for these during login.',
+    'Domain contains "appleid.icloud.com" but the actual domain is "signin-verify.net" — classic subdomain trick.',
+    'The real Apple ID login is at appleid.apple.com — not .net or .verify domains.',
+    'Requests full credit card details during login — Apple never asks for this.',
   ],
-  explanation: 'Correct. Apple ID login only requires your email and password at appleid.apple.com. Any page asking for DOB, CVV, or card expiry during login is phishing.',
+  explanation: 'Correct. The domain uses "appleid.icloud.com" as a subdomain of signin-verify.net. Always check what comes immediately before .com',
   hints: [],
   html: `<div class="sim-page">
   <div class="sim-login-box">
     <div class="sim-login-logo" style="font-size:2rem">&#63743;</div>
-    <div class="sim-login-title">Apple ID — Identity Verification Required</div>
-    <div class="sim-field"><label>Apple ID (Email)</label><input placeholder="name@example.com"></div>
+    <div class="sim-login-title">Apple ID — Sign in to verify your account</div>
+    <div class="sim-warning-banner">We've detected unusual activity. Please verify your identity.</div>
+    <div class="sim-field"><label>Apple ID</label><input placeholder="name@icloud.com"></div>
     <div class="sim-field"><label>Password</label><input type="password" placeholder="Password"></div>
-    <div class="sim-field"><label>Date of Birth</label><input placeholder="MM / DD / YYYY"></div>
-    <div class="sim-field"><label>Card Expiry</label><input placeholder="MM / YY"></div>
-    <div class="sim-field"><label>CVV</label><input placeholder="3-digit security code"></div>
-    <button class="sim-btn">Continue &#8594;</button>
+    <div class="sim-field"><label>Full Name (as on card)</label><input placeholder="First and last name"></div>
+    <div class="sim-field"><label>Card Number</label><input placeholder="#### #### #### ####"></div>
+    <button class="sim-btn">Verify Identity</button>
+    <div class="sim-small">Apple will never ask for your full card number during login</div>
   </div>
 </div>`
 },
@@ -544,25 +590,31 @@ const SCENARIOS = [
 },
 
 {
-  id: 8, title: 'Facebook — Log In',
-  type: 'LOGIN PAGE', difficulty: 'easy', isPhishing: true,
-  url: 'faceb00k.com/login', domain: 'faceb00k.com', domainClass: 'suspicious', hasLock: true,
+  id: 8, title: 'Facebook — Login Alert',
+  type: 'EMAIL', difficulty: 'hard', isPhishing: true,
+  url: 'facebook-security.verify-account.net/alert', domain: 'facebook-security.verify-account.net', domainClass: 'suspicious', hasLock: false,
   indicators: [
-    'Domain is "faceb00k.com" — uses zeros instead of the letter O (typosquatting).',
-    'Page mimics Facebook\'s login UI but the domain is the giveaway.',
+    'Sender domain is "security@facebook-security.verify-account.net" — not facebook.com.',
+    'The link goes to a lookalike domain with "facebook-security" as a subdomain.',
+    'Threatens account lock within 12 hours to create urgency.',
+    'Generic greeting — Facebook knows your name.',
   ],
-  explanation: 'Correct. "faceb00k.com" is a typosquat of facebook.com. Always verify the full domain in the address bar before entering credentials — design alone cannot confirm legitimacy.',
+  explanation: 'Correct. Facebook security emails come from @facebookmail.com or @facebook.com. This domain is a lookalike.',
   hints: [],
-  html: `<div class="sim-page">
-  <div class="sim-login-box">
-    <div class="sim-login-logo" style="color:#1877F2;font-size:2.2rem;font-weight:900">faceb<span style="color:#ff3c5a">00</span>k</div>
-    <div class="sim-login-title">Log in to your account</div>
-    <div class="sim-field"><label>Email or phone number</label><input placeholder="Email or phone number"></div>
-    <div class="sim-field"><label>Password</label><input type="password" placeholder="Password"></div>
-    <button class="sim-btn blue-btn">Log In</button>
-    <hr class="sim-divider">
-    <div class="sim-small">Create new account</div>
+  html: `<div class="sim-email">
+  <div class="sim-email-header">
+    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">Facebook Security &lt;security@facebook-security.verify-account.net&gt;</span></div>
+    <div class="sim-email-field"><span class="sim-email-field-label">To:</span><span class="sim-email-field-value">user@email.com</span></div>
+    <div class="sim-email-subject">⚠️ Someone tried to log into your account</div>
   </div>
+  <div class="sim-email-body">
+    <p>Hi there,</p>
+    <p>We noticed a login attempt to your Facebook account from a device we don't recognize.</p>
+    <p><strong>Location:</strong> Ho Chi Minh City, Vietnam<br><strong>Device:</strong> Samsung Galaxy S22</p>
+    <p>If this wasn't you, please secure your account immediately. Your account will be locked in <strong>12 hours</strong> if you don't act.</p>
+    <a class="sim-email-cta red-btn" href="#">Secure Your Account</a>
+  </div>
+  <div class="sim-email-footer">Facebook | security@facebook-security.verify-account.net</div>
 </div>`
 },
 
@@ -592,26 +644,29 @@ const SCENARIOS = [
 },
 
 {
-  id: 10, title: 'Amazon — Secure Sign-In',
-  type: 'LOGIN PAGE', difficulty: 'medium', isPhishing: true,
-  url: 'amazon-secure-signin.net/ap/signin', domain: 'amazon-secure-signin.net', domainClass: 'suspicious', hasLock: true,
+  id: 10, title: 'Amazon — Payment Method Expired',
+  type: 'EMAIL', difficulty: 'hard', isPhishing: true,
+  url: 'amazon.com.payment-update.net/verify', domain: 'amazon.com.payment-update.net', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'Domain is "amazon-secure-signin.net" — Amazon\'s real domain is amazon.com.',
-    'Login form requests credit card number during sign-in — Amazon never does this.',
-    'HTTPS padlock is present but does not confirm the site is legitimate.',
+    'Domain contains "amazon.com" but the actual domain is "payment-update.net".',
+    'Real Amazon payment emails come from @amazon.com — not subdomains of random .net domains.',
+    'Requests full card number and CVV to "update payment" — Amazon never asks for CVV via email.',
   ],
-  explanation: 'Correct. Amazon sign-in at amazon.com only requires email and password. A .net lookalike domain requesting card details during login is harvesting credentials and payment data.',
+  explanation: 'Correct. "amazon.com.payment-update.net" uses amazon.com as a subdomain of payment-update.net. The real domain is payment-update.net, not amazon.com.',
   hints: [],
-  html: `<div class="sim-page">
-  <div class="sim-login-box">
-    <div class="sim-login-logo" style="color:#FF9900;font-size:1.8rem;font-weight:700">amazon</div>
-    <div class="sim-login-title">Sign in &#8212; Secure Verification Required</div>
-    <div class="sim-field"><label>Email or mobile number</label><input placeholder="Email or mobile"></div>
-    <div class="sim-field"><label>Password</label><input type="password" placeholder="Password"></div>
-    <div class="sim-field"><label>Credit/Debit Card Number (to confirm identity)</label><input placeholder="#### #### #### ####"></div>
-    <button class="sim-btn" style="background:#FF9900;color:#000">Continue</button>
-    <div class="sim-badge-row"><span class="sim-badge">256-bit SSL</span><span class="sim-badge">Verified &amp; Secure</span></div>
+  html: `<div class="sim-email">
+  <div class="sim-email-header">
+    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">Amazon Payments &lt;payments@amazon.com.payment-update.net&gt;</span></div>
+    <div class="sim-email-field"><span class="sim-email-field-label">To:</span><span class="sim-email-field-value">user@email.com</span></div>
+    <div class="sim-email-subject">Your payment method has expired — Update now</div>
   </div>
+  <div class="sim-email-body">
+    <p>Hello,</p>
+    <p>The credit card associated with your Amazon account has expired. To avoid interruption of your Prime membership and subscriptions, please update your payment information within <strong>48 hours</strong>.</p>
+    <p><strong>Card on file:</strong> Visa ending in 4821 (Expired 05/26)</p>
+    <a class="sim-email-cta" href="#">Update Payment Method</a>
+  </div>
+  <div class="sim-email-footer">Amazon.com | payments@amazon.com.payment-update.net</div>
 </div>`
 },
 
@@ -645,10 +700,10 @@ const SCENARIOS = [
 
 {
   id: 12, title: 'LinkedIn — Exclusive Job Opportunity',
-  type: 'EMAIL', difficulty: 'medium', isPhishing: true,
-  url: 'linkedin-careers.net/apply', domain: 'linkedin-careers.net', domainClass: 'suspicious', hasLock: false,
+  type: 'EMAIL', difficulty: 'hard', isPhishing: true,
+  url: 'linkedin-careers.com/apply', domain: 'linkedin-careers.com', domainClass: 'suspicious', hasLock: false,
   indicators: [
-    'Sender domain is "linkedin-jobs.net" — LinkedIn emails come from @linkedin.com.',
+    'Sender domain is "recruiter@linkedin-careers.com" — LinkedIn emails come from @linkedin.com.',
     'Requests Social Security Number in the first outreach email — no legitimate recruiter does this.',
     'Unrealistically high salary with no job description or company name.',
     'Grammar errors: "good candidate", "following informations".',
@@ -657,7 +712,7 @@ const SCENARIOS = [
   hints: [],
   html: `<div class="sim-email">
   <div class="sim-email-header">
-    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">LinkedIn Recruiter &lt;recruiter@linkedin-jobs.net&gt;</span></div>
+    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">LinkedIn Recruiter &lt;recruiter@linkedin-careers.com&gt;</span></div>
     <div class="sim-email-field"><span class="sim-email-field-label">To:</span><span class="sim-email-field-value">candidate@email.com</span></div>
     <div class="sim-email-subject">Exclusive Opportunity &#8212; $145,000/year &#8212; Apply Immediately</div>
   </div>
@@ -667,20 +722,20 @@ const SCENARIOS = [
     <p>To fast-track your application please reply with the following informations:<br>&#8226; Full Legal Name&#160;&#160;&#8226; Date of Birth&#160;&#160;&#8226; Social Security Number&#160;&#160;&#8226; Current Address</p>
     <a class="sim-email-cta" href="#">Submit Application &#8594;</a>
   </div>
-  <div class="sim-email-footer">LinkedIn Recruiting | recruiter@linkedin-jobs.net</div>
+  <div class="sim-email-footer">LinkedIn Recruiting | recruiter@linkedin-careers.com</div>
 </div>`
 },
 
 {
   id: 13, title: 'Steam — Trade Offer Login',
   type: 'LOGIN PAGE', difficulty: 'hard', isPhishing: true,
-  url: 'steamcommunity.trade/tradeoffer/new', domain: 'steamcommunity.trade', domainClass: 'suspicious', hasLock: true,
+  url: 'steamcommurnity.com/tradeoffer/new', domain: 'steamcommurnity.com', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'Domain is "steamcommunity.trade" — Steam\'s real domains are steampowered.com and steamcommunity.com.',
-    '.trade is not an official Steam TLD — it is a generic domain anyone can register.',
+    'Domain is "steamcommurnity.com" — uses "rn" to mimic "m" in "community" (homoglyph attack).',
+    'Steam\'s real domains are steampowered.com and steamcommunity.com.',
     'Design is nearly identical to real Steam — domain check is the only tell.',
   ],
-  explanation: 'Correct. This is a hard-to-spot phishing page. The design perfectly mimics Steam, but "steamcommunity.trade" is not owned by Valve. Always verify the full domain, not just the appearance.',
+  explanation: 'Correct. "steamcommurnity.com" visually resembles "steamcommunity.com" in many fonts. Always read domains letter by letter.',
   hints: [],
   html: `<div class="sim-page">
   <div class="sim-login-box" style="max-width:340px">
@@ -728,18 +783,18 @@ const SCENARIOS = [
 
 {
   id: 15, title: 'DocuSign — Signature Required',
-  type: 'EMAIL', difficulty: 'medium', isPhishing: true,
-  url: 'docu-sign.services/d/complete', domain: 'docu-sign.services', domainClass: 'suspicious', hasLock: true,
+  type: 'EMAIL', difficulty: 'hard', isPhishing: true,
+  url: 'docusign.secure.com/sign', domain: 'docusign.secure.com', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'Sender domain is "docu-sign.services" — real DocuSign uses docusign.com.',
+    'Sender domain is "dse@docusign.secure.com" — legitimate DocuSign uses docusign.com or docusign.net.',
+    '"secure.com" is a domain anyone can register — not affiliated with DocuSign.',
     'User did not initiate or expect this signing request.',
-    'Display name says "DocuSign" but actual address reveals the fake domain.',
   ],
-  explanation: 'Correct. DocuSign sends documents from @docusign.com or @docusign.net. The domain docu-sign.services is a lookalike. Unexpected document requests should always be verified directly with the supposed sender.',
+  explanation: 'Correct. DocuSign sends documents from @docusign.com or @docusign.net. "docusign.secure.com" is a lookalike. Unexpected document requests should always be verified directly.',
   hints: [],
   html: `<div class="sim-email">
   <div class="sim-email-header">
-    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">DocuSign eSignature &lt;dse@docu-sign.services&gt;</span></div>
+    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">DocuSign eSignature &lt;dse@docusign.secure.com&gt;</span></div>
     <div class="sim-email-field"><span class="sim-email-field-label">To:</span><span class="sim-email-field-value">user@email.com</span></div>
     <div class="sim-email-subject">SIGNATURE REQUIRED — Please review and sign your document</div>
   </div>
@@ -749,7 +804,7 @@ const SCENARIOS = [
     <p>Document: <strong>NDA_Agreement_Final_2026.pdf</strong><br>Sent: Today at 9:14 AM</p>
     <a class="sim-email-cta" href="#">Review &amp; Sign Document &#8594;</a>
   </div>
-  <div class="sim-email-footer">DocuSign Inc. | dse@docu-sign.services | docu-sign.services</div>
+  <div class="sim-email-footer">DocuSign Inc. | dse@docusign.secure.com | docusign.secure.com</div>
 </div>`
 },
 
@@ -944,17 +999,17 @@ const SCENARIOS = [
 {
   id: 23, title: 'Adobe Sign — Document for Review',
   type: 'EMAIL', difficulty: 'hard', isPhishing: true,
-  url: 'adobe-esign.services/sign', domain: 'adobe-esign.services', domainClass: 'suspicious', hasLock: true,
+  url: 'adobe-esign.com/sign', domain: 'adobe-esign.com', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'Sender domain is "adobe-esign.services" — legitimate Adobe Sign uses adobesign.com.',
+    'Sender domain is "dse@adobe-esign.com" — legitimate Adobe Sign uses adobesign.com.',
+    'Missing the letter "b" (adobesign vs adobe-sign) is subtle.',
     'User did not request or expect this document.',
-    'Display name says "Adobe Sign" but the actual sending address reveals the fake domain.',
   ],
-  explanation: 'Correct. This is a hard scenario — the design is convincing. Adobe Sign emails come from @adobesign.com or @adobesign.net. The domain adobe-esign.services is a lookalike. Unexpected document requests should be verified directly with the supposed sender.',
+  explanation: 'Correct. Legitimate Adobe Sign emails come from @adobesign.com. "adobe-esign.com" is a lookalike that adds a hyphen and drops the "b".',
   hints: [],
   html: `<div class="sim-email">
   <div class="sim-email-header">
-    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">Adobe Sign &lt;dse@adobe-esign.services&gt;</span></div>
+    <div class="sim-email-field"><span class="sim-email-field-label">From:</span><span class="sim-email-field-value">Adobe Sign &lt;dse@adobe-esign.com&gt;</span></div>
     <div class="sim-email-field"><span class="sim-email-field-label">To:</span><span class="sim-email-field-value">user@email.com</span></div>
     <div class="sim-email-subject">Please review and sign: Employment Contract 2026.pdf</div>
   </div>
@@ -964,20 +1019,20 @@ const SCENARIOS = [
     <p>Document: <strong>Employment Contract 2026.pdf</strong><br>Expires: 3 days from now</p>
     <a class="sim-email-cta" href="#">Review &amp; Sign &#8594;</a>
   </div>
-  <div class="sim-email-footer">Adobe Systems Inc. | dse@adobe-esign.services | Powered by Adobe Sign</div>
+  <div class="sim-email-footer">Adobe Systems Inc. | dse@adobe-esign.com | Powered by Adobe Sign</div>
 </div>`
 },
 
 {
   id: 24, title: 'University — Student Portal Login',
   type: 'LOGIN PAGE', difficulty: 'hard', isPhishing: true,
-  url: 'university-student-portal.edu.co/login', domain: 'university-student-portal.edu.co', domainClass: 'suspicious', hasLock: true,
+  url: 'universitv-portal.edu/login', domain: 'universitv-portal.edu', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'Domain uses ".edu.co" — US educational institutions have federally controlled .edu domains, not .edu.co.',
-    'No institution name, logo, or branding on the page.',
+    'Domain is "universitv-portal.edu" — uses the letter "v" instead of "y" in "university".',
+    'No specific university name or branding — generic "Student Portal".',
     'Requests Social Security Number at login — universities never require SSN to sign in.',
   ],
-  explanation: 'Correct. Legitimate US university portals use .edu domains (e.g., mit.edu, harvard.edu). The .edu.co combination is not a US educational domain. No portal requires SSN to log in.',
+  explanation: 'Correct. The domain uses a homoglyph ("v" for "y") to mimic "university-portal.edu". Always verify exact spelling.',
   hints: [],
   html: `<div class="sim-page">
   <div class="sim-login-box">
@@ -993,26 +1048,29 @@ const SCENARIOS = [
 },
 
 {
-  id: 25, title: 'QR Code — Secure Payment Verification',
-  type: 'QR CODE', difficulty: 'hard', isPhishing: true,
-  url: 'paymentqr-scan.com/verify', domain: 'paymentqr-scan.com', domainClass: 'suspicious', hasLock: false,
+  id: 25, title: 'CAPTCHA Verification Required',
+  type: 'LOGIN PAGE', difficulty: 'hard', isPhishing: true,
+  url: 'cloudflare-verify.com/captcha', domain: 'cloudflare-verify.com', domainClass: 'suspicious', hasLock: true,
   indicators: [
-    'QR code resolves to "paymentqr-scan.com" — not associated with any known payment processor.',
-    'QR codes hide their destination URL until scanned — always preview before visiting.',
-    'Urgency: "verification must be completed immediately before session expires".',
-    'Unknown source — no organisation name or context explaining why this QR is needed.',
+    'Domain is "cloudflare-verify.com" — real Cloudflare uses cloudflare.com.',
+    'The CAPTCHA is fake — real CAPTCHAs never ask you to "press Windows + R".',
+    'The instructions are designed to make you run malicious code.',
   ],
-  explanation: 'Correct. QR codes can redirect to any URL — the destination is hidden until scanned. Unsolicited QR codes combined with urgency language are a common phishing vector called "quishing".',
+  explanation: 'Correct. This is a fake CAPTCHA phishing page. Real CAPTCHAs never instruct you to open Run dialog boxes or press keyboard shortcuts.',
   hints: [],
   html: `<div class="sim-page">
-  <div class="sim-qr-page">
-    <div class="sim-qr-title">Scan to Complete Secure Payment Verification</div>
-    <div class="sim-qr-code"></div>
-    <div class="sim-qr-url">Destination: http://paymentqr-scan.com/verify?ref=TXN-8821-XK</div>
-    <p style="font-size:0.82rem;color:var(--text-secondary);margin:4px 0">Your session will expire in <strong style="color:var(--red)">04:12</strong>. Scan immediately to avoid transaction cancellation.</p>
-    <div class="sim-small">Do not share this QR code with anyone.</div>
-  </div>
-</div>`
+    <div class="sim-login-box" style="max-width:420px">
+      <div class="sim-login-logo" style="font-size:1.2rem">✓ Verify you are human</div>
+      <div class="sim-warning-banner" style="background:#e8f0fe;color:#1a73e8;border-color:#1a73e8">Complete the verification to continue</div>
+      <div style="background:#f8f9fa;padding:20px;text-align:center;border-radius:8px">
+        <div style="font-size:2rem">☑️</div>
+        <p style="font-size:0.85rem;margin:8px 0">Press <strong>Windows + R</strong>, type <strong>certmgr.msc</strong>, and click OK to verify your identity.</p>
+        <p style="font-size:0.7rem;color:#80868b">This is a security check to prove you are not a robot.</p>
+      </div>
+      <button class="sim-btn blue-btn">I have completed verification</button>
+      <div class="sim-small">Protected by reCAPTCHA</div>
+    </div>
+  </div>`
 },
 
 /* ================================================================

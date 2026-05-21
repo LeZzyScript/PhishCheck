@@ -23,19 +23,20 @@
   --green-dim:      #00cc6e;
   --green-glow:     #00ff8820;
 
-  --red:            #ff3c5a;
-  --red-dim:        #cc2e46;
-  --red-glow:       #ff3c5a20;
+  --red:            #ff5c7a;   /* brighter red */
+  --red-dim:        #e0445a;
+  --red-glow:       #ff5c7a20;
 
-  --yellow:         #ffd700;
-  --yellow-dim:     #ccac00;
+  --yellow:         #ffe066;   /* brighter yellow */
+  --yellow-dim:     #e0c040;
+  
+  --orange:         #ffaa33;   /* brighter orange */
 
-  --orange:         #ff8c00;
-
-  --text-primary:   #e8f4fd;
-  --text-secondary: #7da8c8;
-  --text-muted:     #3d6080;
-  --text-dim:       #1e3d5a;
+  /* BRIGHTER TEXT COLORS */
+  --text-primary:   #ffffff;    /* pure white for main text */
+  --text-secondary: #b8d4f0;    /* light icy blue */
+  --text-muted:     #6c9bc0;    /* brighter muted blue */
+  --text-dim:       #2a5a8c;    /* slightly brighter dark text */
 
   --font-display:   'Share Tech Mono', monospace;
   --font-ui:        'Rajdhani', sans-serif;
@@ -632,7 +633,7 @@ body::before {
 
 .section-card p {
   font-size: 0.92rem;
-  color: var(--text-secondary);
+  color: #d4e8fc;  /* brighter than before */
   line-height: 1.7;
 }
 
@@ -788,7 +789,7 @@ body::before {
 .terminal-line {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--green);
+  color: #33ffaa;  /* brighter mint green */
   line-height: 2;
   white-space: nowrap;
   overflow: hidden;
@@ -947,10 +948,11 @@ body::before {
   color: var(--text-primary);
   letter-spacing: 0.05em;
   transition: all 0.3s;
+  font-weight: 600;  /* added weight */
 }
-.score-value.correct { color: var(--green); }
-.score-value.wrong   { color: var(--red); }
-.score-value.streak  { color: var(--yellow); }
+.score-value.correct { color: #33ffaa; }  /* brighter green */
+.score-value.wrong   { color: #ff7a94; }  /* brighter red */
+.score-value.streak  { color: #ffe066; }  /* brighter yellow */
 
 .score-divider {
   width: 1px;
@@ -1685,7 +1687,7 @@ body::before {
 
 .guide-category p {
   font-size: 0.82rem;
-  color: var(--text-secondary);
+  color: #b8d4f0;
   line-height: 1.6;
 }
 
